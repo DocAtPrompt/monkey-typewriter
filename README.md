@@ -201,6 +201,49 @@ python3 python/travesty.py -n 7 -c 500 -s "Habe nun, ach! Philosophie, " corpus/
 python3 python/travesty.py -n 5 -c 2000 --seed 42 -o out.txt corpus/*.txt
 ```
 
+## Benchmark
+
+Same task across all four implementations: generate **1,000,000 characters**
+from Goethe's *Faust* (≈200K codepoints) with `n=6` and a fixed seed.
+Measured with [hyperfine](https://github.com/sharkdp/hyperfine): 3 warmup
+runs, 10 timed runs, output discarded to `/dev/null`.
+
+| Implementation | Mean (ms)      | Relative |
+|:---------------|---------------:|---------:|
+| Rust           | 139.6 ± 5.9    | 1.00× |
+| Go             | 139.6 ± 7.3    | 1.00× |
+| Python         | 480.1 ± 12.2   | 3.44× |
+| C              | 691.7 ± 22.5   | 4.96× |
+
+*Apple M-series, macOS. Build flags: `-O2` (C), `--release` with LTO (Rust),
+default (Go), CPython 3.x (Python).*
+
+### Why is C slower than Python?
+
+This is the most interesting row in the table. The reason is purely
+algorithmic, not linguistic: the C version stores the n-gram table as a
+**sorted array with binary-search lookup** (≈17 comparisons per generated
+character at this corpus size), while Python, Rust, and Go all use **hash
+tables** with average O(1) lookup.
+
+CPython's `dict` is itself a heavily tuned C implementation, so the Python
+program calling `dict.__getitem__` ends up faster than a C program doing
+binary search through ~200,000 entries.
+
+The sorted-array choice in the C port was deliberate: it keeps the file
+short, fully self-contained, and free of any third-party hash library or
+hand-rolled hashing code. A C version using `uthash` or a custom open-
+addressing hash table would likely match or beat Rust and Go.
+
+Take-aways:
+
+1. **Data structure choice matters more than language choice.** A binary
+   search in a tight C loop loses to a hash lookup in interpreted Python.
+2. **Modern Rust and Go HashMaps are excellent** — they tie within the
+   measurement noise here.
+3. **Python is closer to C than people remember**, when its built-ins do
+   the heavy lifting.
+
 ## References
 
 - Borel, É. (1913). *Mécanique Statistique et Irréversibilité.*
