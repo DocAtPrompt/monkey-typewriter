@@ -1,0 +1,15 @@
+[package]
+name = "travesty"
+version = "0.1.0"
+edition = "2021"
+description = "Character-level Markov chain text generator (n-gram travesty)."
+license = "MIT"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+rand = "0.8"
+regex = "1"
+
+[profile.release]
+lto = true
+codegen-units = 1

@@ -1,15 +1,16 @@
 # Travesty — A Markov Chain Text Generator
 
-A small, dependency-free command-line program that builds a character-level
+A small, dependency-light command-line program that builds a character-level
 Markov chain from any input text and uses it to generate new text in a
-strikingly similar style.
+strikingly similar style. Available in three implementations: **Python**,
+**Rust**, and **Go**.
 
 It is also a deliberate homage to a piece of computing history that, in
 retrospect, turns out to be the direct conceptual ancestor of modern large
 language models.
 
 ```
-$ python3 travesty.py -n 6 -c 200 faust.txt
+$ travesty -n 6 -c 200 corpus/faust.txt
 Faust und fernen darauf mich von deinem lange hab ich jetzo bitt ich Eurer
 Lüsternheit, Und für dich in der Natur. MEPHISTOPHELES (allein. DIE TIERE.
 So hört doch zuletzt bringt Gefahr, ich lieber. MEPHISTOPHELES. Still, er
@@ -71,32 +72,98 @@ But conceptually, an LLM is the great-great-grandchild of the BASIC monkey.
 This program is a tribute to that ancestor — and a small, self-contained
 way to feel where the magic starts and where it stops.
 
-## Installation
+## Demo
 
-Requires Python 3.9+. No third-party dependencies.
+The same Faust corpus, the same seed, four different *n* values:
+
+### n = 2 (letter pairs only)
+```
+Diel sich reintwas Glauteiselt! Gottescht Perscht es undiels Fesehlum
+ihmeineittim Ster Brugib ich inen frei, Phat Sin ist ver,
+SIEBELES.
+```
+Texture is right, hardly any real words.
+
+### n = 4
+```
+Marthe!
+Juchhe!
+Juchherrlichen vorm rogatur.
+Da saßen stillet Bach rechenkt, ausgespitzes, frisch gebracht!
+```
+Real words appear, character names emerge, no grammar yet.
+
+### n = 6
+```
+Faust und fernen darauf mich von deinem lange hab ich jetzo bitt ich
+Eurer Lüsternheit, Und für dich in der Natur.
+MEPHISTOPHELES (allein.
+```
+Sentences nearly grammatical, stage directions in plausible places,
+Goethe's voice clearly recognisable.
+
+### n = 8
+```
+Faust:
+Der Tragödie ersten Ostertage,
+Erlaubt Ihr mir vorbei und schäumt das Meer sich mit behende,
+Führt mir nach des Lebens Bächen,
+Ach! nach dem Tische wendend.)
+```
+Almost lyrical, on the edge of meaningful — yet still pure statistics.
+
+## Repository layout
+
+```
+.
+├── python/      Python 3 reference implementation (no dependencies)
+├── rust/        Rust port (clap + rand + regex)
+├── go/          Go port (standard library only)
+└── corpus/      Helper script for fetching public-domain sample texts
+```
+
+## Quick start
 
 ```bash
-git clone https://github.com/<your-user>/travesty.git
-cd travesty
-python3 travesty.py --help
+# 1. Clone
+git clone https://github.com/DocAtPrompt/monkey-typewriter.git
+cd monkey-typewriter
+
+# 2. Fetch a sample corpus (Goethe's Faust)
+bash corpus/fetch.sh
+
+# 3. Run any of the three implementations
+python3 python/travesty.py -n 6 -c 800 corpus/faust.txt
+
+(cd rust && cargo build --release)
+./rust/target/release/travesty -n 6 -c 800 corpus/faust.txt
+
+(cd go && go build -o travesty .)
+./go/travesty -n 6 -c 800 corpus/faust.txt
 ```
+
+### Build details
+
+| Implementation | Requirements | Build |
+|----------------|-------------|-------|
+| Python  | Python 3.9+, no third-party packages | none — run the script |
+| Rust    | Rust 1.70+ (`cargo`)                  | `cd rust && cargo build --release` |
+| Go      | Go 1.21+                              | `cd go && go build -o travesty .` |
 
 ## Usage
 
-```
-python3 travesty.py [OPTIONS] FILE [FILE ...]
-```
+All three implementations share the same options.
 
 ### Options
 
 | Flag | Description | Default |
 |------|-------------|---------|
 | `FILE` | One or more input files (`.txt` or `.md`). For `.md`, common Markdown formatting markers are stripped on read. | required |
-| `-n N`, `--ngram N` | Length of the n-gram context, 1–20. Sweet spot is 4–8. | `5` |
-| `-c N`, `--count N` | Number of characters to generate (including the initial seed). | `1000` |
-| `-s TEXT`, `--start TEXT` | Initial text the output begins with. Must be at least *n* characters long. | first *n* chars of the input |
-| `-o FILE`, `--output FILE` | Write the result to a file instead of stdout. | stdout |
-| `--seed N` | Random seed for reproducible output. | system random |
+| `-n N`, `--ngram N` *(`-ngram` in Go)* | Length of the n-gram context, 1–20. | `5` |
+| `-c N`, `--count N` *(`-count` in Go)* | Number of characters to generate (including the initial seed). | `1000` |
+| `-s TEXT`, `--start TEXT` *(`-start` in Go)* | Initial text the output begins with. Must be at least *n* characters long. | first *n* chars of input |
+| `-o FILE`, `--output FILE` *(`-output` in Go)* | Write output to a file instead of stdout. | stdout |
+| `--seed N` *(`-seed` in Go)* | Random seed for reproducible output. | system random |
 
 ### Choosing *n*
 
@@ -118,38 +185,22 @@ simply quoting them — is typically between 5 and 8.
 
 ## Examples
 
-Fetch Goethe's *Faust* (German, public domain via Project Gutenberg) and
-play with it:
-
 ```bash
-curl -sL https://www.gutenberg.org/cache/epub/2229/pg2229.txt \
-  | sed -n '/^\*\*\* START/,/^\*\*\* END/p' \
-  | sed '1d;$d' > faust.txt
-
 # A 1000-character travesty in Goethe's voice
-python3 travesty.py -n 6 -c 1000 faust.txt
+python3 python/travesty.py -n 6 -c 1000 corpus/faust.txt
 
 # Continue a famous opening line
-python3 travesty.py -n 7 -c 500 -s "Habe nun, ach! Philosophie, " faust.txt
+python3 python/travesty.py -n 7 -c 500 -s "Habe nun, ach! Philosophie, " corpus/faust.txt
 
 # Mix multiple sources, write to file, reproducible
-python3 travesty.py -n 5 -c 2000 --seed 42 -o out.txt corpus/*.md
+python3 python/travesty.py -n 5 -c 2000 --seed 42 -o out.txt corpus/*.txt
 ```
-
-## Implementations
-
-- **Python** — `travesty.py` (this repository)
-- **Rust** — planned
-- **Go** — planned
-
-The Rust and Go ports are intended both as performance comparisons and as
-an excuse to write the same idea in three quite different languages.
 
 ## References
 
 - Borel, É. (1913). *Mécanique Statistique et Irréversibilité.*
 - Shannon, C. E. (1948). *A Mathematical Theory of Communication.* Bell
-  System Technical Journal.
+  System Technical Journal, 27(3), 379–423.
 - Kenner, H. & O'Rourke, J. (1984). *A Travesty Generator for Micros.*
   BYTE Magazine, November 1984.
 - Dewdney, A. K. *Computer Recreations* column, *Scientific American* /

@@ -1,9 +1,11 @@
-# Downloaded sample texts (see README for fetch instructions)
+# Downloaded sample texts (run corpus/fetch.sh to recreate)
 faust*.txt
+corpus/*.txt
 *.epub
 
 # Generated output
 output.txt
+out.txt
 
 # Python
 __pycache__/
@@ -11,6 +13,13 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
+
+# Rust
+rust/target/
+
+# Go
+go/travesty
+go/travesty.exe
 
 # Editor / OS
 .DS_Store
