@@ -1,4 +1,4 @@
-# Travesty — A Markov Chain Text Generator
+# monkey-typewriter — A Markov Chain Text Generator
 
 A small, dependency-light command-line program that builds a character-level
 Markov chain from any input text and uses it to generate new text in a
