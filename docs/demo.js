@@ -25,7 +25,10 @@
 
   function tokenise(text, mode) {
     if (mode === 'word') {
-      return text.match(/\w+|[^\w\s]/gu) || [];
+      // Use Unicode property escapes so umlauts (ö, ä, ü, ß, …) are part of
+      // a word.  In JS, \w is ASCII-only even with the /u flag, which would
+      // otherwise split "schön" into "sch", "ö", "n".
+      return text.match(/[\p{L}\p{N}_]+|[^\p{L}\p{N}\s_]/gu) || [];
     }
     // character mode — array of code points (handles surrogate pairs)
     return Array.from(text);
@@ -85,7 +88,7 @@
       }
       const next = sampleWithTemp(followers, T);
       if (wordMode) {
-        const isPunct = next.length === 1 && /[^\w\s]/u.test(next);
+        const isPunct = next.length === 1 && /[^\p{L}\p{N}\s_]/u.test(next);
         output += (isPunct ? '' : ' ') + next;
         const tokens = prefix.split(' ').slice(1);
         tokens.push(next);
