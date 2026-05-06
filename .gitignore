@@ -23,6 +23,7 @@ go/travesty.exe
 
 # C
 c/travesty
+c/travesty_hash
 c/*.o
 
 # Editor / OS

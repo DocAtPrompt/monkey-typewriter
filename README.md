@@ -57,6 +57,29 @@ an author's voice.
 This program is a direct descendant of those listings — same algorithm,
 modern syntax.
 
+### A personal aside — BASIC on an Amiga
+
+After encountering the *Computer-Kurzweil* column in *Spektrum der
+Wissenschaft*, the author of this repository typed his own version of the
+Travesty algorithm in BASIC into an Amiga. RAM was scarce enough that an
+n-gram table simply did not fit — the program had no choice but to keep
+the *input text* in memory and, for every single character it produced,
+walk through the entire corpus from start to finish, counting which
+characters had ever followed the current prefix.
+
+What this repository does in around a tenth of a second on a modern
+laptop, the BASIC version produced slowly, character by character, taking
+many minutes for a single paragraph. Watching it print pseudo-Goethe in
+real time, with the floppy drive occasionally clicking, was — by all
+accounts — quietly magical.
+
+This repository is a homage to that BASIC listing, written four decades
+later in four languages and with one of those languages (the C port) in
+two flavours: one keeping the spirit of "we don't have a hash table at
+hand" alive with a simple sorted array, the other showing what the same
+language and the same compiler can do once you give them a proper hash
+map.
+
 ### 2017+ — Modern Large Language Models
 
 The line from Shannon's hand-tabulated bigrams through the BASIC monkey of
@@ -117,7 +140,7 @@ Almost lyrical, on the edge of meaningful — yet still pure statistics.
 ```
 .
 ├── python/      Python 3 reference implementation (no dependencies)
-├── c/           C11 port (no dependencies, hand-rolled UTF-8 codec + sorted-array table)
+├── c/           Two C11 ports — sorted-array (travesty.c) and hash-table (travesty_hash.c)
 ├── rust/        Rust port (clap + rand + regex)
 ├── go/          Go port (standard library only)
 └── corpus/      Helper script for fetching public-domain sample texts
@@ -137,7 +160,8 @@ bash corpus/fetch.sh
 python3 python/travesty.py -n 6 -c 800 corpus/faust.txt
 
 (cd c && make)
-./c/travesty -n 6 -c 800 corpus/faust.txt
+./c/travesty      -n 6 -c 800 corpus/faust.txt   # sorted-array version
+./c/travesty_hash -n 6 -c 800 corpus/faust.txt   # hash-table version
 
 (cd rust && cargo build --release)
 ./rust/target/release/travesty -n 6 -c 800 corpus/faust.txt
@@ -203,46 +227,45 @@ python3 python/travesty.py -n 5 -c 2000 --seed 42 -o out.txt corpus/*.txt
 
 ## Benchmark
 
-Same task across all four implementations: generate **1,000,000 characters**
-from Goethe's *Faust* (≈200K codepoints) with `n=6` and a fixed seed.
-Measured with [hyperfine](https://github.com/sharkdp/hyperfine): 3 warmup
-runs, 10 timed runs, output discarded to `/dev/null`.
+Same task across all five binaries: generate **1,000,000 characters** from
+Goethe's *Faust* (≈200K codepoints) with `n=6` and a fixed seed. Measured
+with [hyperfine](https://github.com/sharkdp/hyperfine): 3 warmup runs, 10
+timed runs, output discarded to `/dev/null`.
 
-| Implementation | Mean (ms)      | Relative |
-|:---------------|---------------:|---------:|
-| Rust           | 139.6 ± 5.9    | 1.00× |
-| Go             | 139.6 ± 7.3    | 1.00× |
-| Python         | 480.1 ± 12.2   | 3.44× |
-| C              | 691.7 ± 22.5   | 4.96× |
+| Implementation     | Mean (ms)      | Relative |
+|:-------------------|---------------:|---------:|
+| C (hash table)     | 111.0 ± 7.7    | 1.00× |
+| Go                 | 147.8 ± 7.2    | 1.33× |
+| Rust               | 150.6 ± 8.6    | 1.36× |
+| Python             | 479.8 ± 3.8    | 4.32× |
+| C (sorted array)   | 689.4 ± 16.7   | 6.21× |
 
-*Apple M-series, macOS. Build flags: `-O2` (C), `--release` with LTO (Rust),
-default (Go), CPython 3.x (Python).*
+*Apple M-series, macOS. Build flags: `-O2` (C), `--release` with LTO
+(Rust), default (Go), CPython 3.x (Python).*
 
-### Why is C slower than Python?
+### Two C versions, six-fold difference
 
-This is the most interesting row in the table. The reason is purely
-algorithmic, not linguistic: the C version stores the n-gram table as a
-**sorted array with binary-search lookup** (≈17 comparisons per generated
-character at this corpus size), while Python, Rust, and Go all use **hash
-tables** with average O(1) lookup.
+The two C builds run the same algorithm and use the same compiler with
+the same flags. They differ in exactly one thing: the n-gram table. The
+slow version uses a sorted array with binary-search lookup (≈17
+comparisons per generated character). The fast version uses an open-
+addressed hash table with FNV-1a hashing.
 
-CPython's `dict` is itself a heavily tuned C implementation, so the Python
-program calling `dict.__getitem__` ends up faster than a C program doing
-binary search through ~200,000 entries.
+Six times faster. Same language, same `-O2`, same input. Data-structure
+choice dominates language choice — and dominates by a wider margin than
+language choice itself does.
 
-The sorted-array choice in the C port was deliberate: it keeps the file
-short, fully self-contained, and free of any third-party hash library or
-hand-rolled hashing code. A C version using `uthash` or a custom open-
-addressing hash table would likely match or beat Rust and Go.
+### Other observations
 
-Take-aways:
-
-1. **Data structure choice matters more than language choice.** A binary
-   search in a tight C loop loses to a hash lookup in interpreted Python.
-2. **Modern Rust and Go HashMaps are excellent** — they tie within the
-   measurement noise here.
-3. **Python is closer to C than people remember**, when its built-ins do
-   the heavy lifting.
+- **Rust and Go essentially tie.** Both rely on heavily tuned standard-
+  library hash maps, and the language difference vanishes into the
+  measurement noise.
+- **Python is closer to C than its reputation suggests** — because
+  CPython's `dict` is itself a hand-tuned C implementation. Python's
+  dict-lookup-in-C beats a hand-rolled C binary search.
+- **Hand-rolled C with the right data structure beats Rust and Go by
+  about 35%.** A small FNV-1a + linear-probing hash table is enough to
+  unseat the modern systems languages on a workload this simple.
 
 ## References
 
@@ -257,3 +280,7 @@ Take-aways:
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+---
+
+*Built with ♥ and the help of [Claude](https://claude.ai).*
