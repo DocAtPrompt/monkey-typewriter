@@ -2,8 +2,8 @@
 
 A small, dependency-light command-line program that builds a character-level
 Markov chain from any input text and uses it to generate new text in a
-strikingly similar style. Available in three implementations: **Python**,
-**Rust**, and **Go**.
+strikingly similar style. Available in four implementations: **Python**,
+**C**, **Rust**, and **Go**.
 
 It is also a deliberate homage to a piece of computing history that, in
 retrospect, turns out to be the direct conceptual ancestor of modern large
@@ -117,6 +117,7 @@ Almost lyrical, on the edge of meaningful — yet still pure statistics.
 ```
 .
 ├── python/      Python 3 reference implementation (no dependencies)
+├── c/           C11 port (no dependencies, hand-rolled UTF-8 codec + sorted-array table)
 ├── rust/        Rust port (clap + rand + regex)
 ├── go/          Go port (standard library only)
 └── corpus/      Helper script for fetching public-domain sample texts
@@ -132,8 +133,11 @@ cd monkey-typewriter
 # 2. Fetch a sample corpus (Goethe's Faust)
 bash corpus/fetch.sh
 
-# 3. Run any of the three implementations
+# 3. Run any of the four implementations
 python3 python/travesty.py -n 6 -c 800 corpus/faust.txt
+
+(cd c && make)
+./c/travesty -n 6 -c 800 corpus/faust.txt
 
 (cd rust && cargo build --release)
 ./rust/target/release/travesty -n 6 -c 800 corpus/faust.txt
@@ -147,6 +151,7 @@ python3 python/travesty.py -n 6 -c 800 corpus/faust.txt
 | Implementation | Requirements | Build |
 |----------------|-------------|-------|
 | Python  | Python 3.9+, no third-party packages | none — run the script |
+| C       | C11 compiler (`cc`/`clang`/`gcc`), `make` | `cd c && make` |
 | Rust    | Rust 1.70+ (`cargo`)                  | `cd rust && cargo build --release` |
 | Go      | Go 1.21+                              | `cd go && go build -o travesty .` |
 

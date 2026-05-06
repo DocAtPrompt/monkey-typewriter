@@ -21,6 +21,10 @@ rust/target/
 go/travesty
 go/travesty.exe
 
+# C
+c/travesty
+c/*.o
+
 # Editor / OS
 .DS_Store
 .idea/
