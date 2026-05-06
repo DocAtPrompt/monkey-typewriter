@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>monkey-typewriter — interactive demo</title>
+<meta name="description" content="A character-level Markov chain text generator. Borel → Shannon → Travesty 1984 → modern LLMs.">
+<link rel="stylesheet" href="demo.css">
+</head>
+<body>
+<header>
+  <h1>monkey-typewriter</h1>
+  <p class="lead">
+    A character-level Markov chain text generator running entirely in your
+    browser. Set an order <em>n</em>, a temperature, choose character or
+    word n-grams, and the page will build the table and produce text in the
+    style of whatever you paste in.
+  </p>
+  <p class="meta">
+    <a href="https://github.com/DocAtPrompt/monkey-typewriter">Source on GitHub</a>
+    · Borel 1913 → Shannon 1948 → Travesty 1984 → today
+  </p>
+</header>
+
+<main>
+  <section>
+    <h2>1. Input text</h2>
+    <p class="hint">
+      Pre-loaded with Goethe's <em>Faust I</em> (public domain). Replace it
+      with anything you like — Shakespeare, a paper of yours, a logfile.
+    </p>
+    <textarea id="input" rows="10" placeholder="Loading sample…"></textarea>
+    <div class="row"><span id="input-stats" class="muted"></span></div>
+  </section>
+
+  <section>
+    <h2>2. Settings</h2>
+    <div class="grid">
+      <label>
+        <span>Mode</span>
+        <select id="mode">
+          <option value="char" selected>character n-grams</option>
+          <option value="word">word n-grams</option>
+        </select>
+      </label>
+      <label>
+        <span>n  <output id="n-out">5</output></span>
+        <input type="range" id="n" min="1" max="10" value="5">
+      </label>
+      <label>
+        <span>count  <output id="count-out">800</output></span>
+        <input type="range" id="count" min="100" max="5000" step="100" value="800">
+      </label>
+      <label>
+        <span>temperature  <output id="temp-out">1.0</output></span>
+        <input type="range" id="temp" min="0" max="3" step="0.1" value="1.0">
+      </label>
+    </div>
+    <div class="row">
+      <button id="go">Generate</button>
+      <span id="build-stats" class="muted"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2>3. Output</h2>
+    <pre id="output" class="output">Click <em>Generate</em> to produce some pseudo-Goethe.</pre>
+  </section>
+
+  <section>
+    <h2>4. Inside the n-gram table</h2>
+    <p class="hint">
+      The most common prefixes the generator saw, and where they branch.
+      Each bar shows how often that follower appears after the prefix.
+    </p>
+    <div id="viz" class="viz"></div>
+  </section>
+</main>
+
+<footer>
+  <p>
+    Built with ♥ and the help of
+    <a href="https://claude.ai">Claude</a>.
+    <a href="https://github.com/DocAtPrompt/monkey-typewriter">Repository</a>
+    · MIT license.
+  </p>
+</footer>
+
+<script src="demo.js"></script>
+</body>
+</html>
