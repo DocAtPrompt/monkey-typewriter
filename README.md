@@ -2,8 +2,10 @@
 
 A small, dependency-light command-line program that builds a character-level
 Markov chain from any input text and uses it to generate new text in a
-strikingly similar style. Available in four implementations: **Python**,
-**C**, **Rust**, and **Go**.
+strikingly similar style. Available in four languages — **Python**, **C**,
+**Rust**, and **Go** — plus an extended Python variant with temperature
+sampling, word n-grams, and table visualisation, and a single-page
+**[interactive web demo](https://docatprompt.github.io/monkey-typewriter/)**.
 
 It is also a deliberate homage to a piece of computing history that, in
 retrospect, turns out to be the direct conceptual ancestor of modern large
@@ -139,10 +141,13 @@ Almost lyrical, on the edge of meaningful — yet still pure statistics.
 
 ```
 .
-├── python/      Python 3 reference implementation (no dependencies)
-├── c/           Two C11 ports — sorted-array (travesty.c) and hash-table (travesty_hash.c)
+├── python/      travesty.py (basic) and travesty2.py (with temperature,
+│                word n-grams, table visualisation, JSON export)
+├── c/           Two C11 ports — sorted-array (travesty.c) and hash-table
+│                (travesty_hash.c)
 ├── rust/        Rust port (clap + rand + regex)
 ├── go/          Go port (standard library only)
+├── docs/        GitHub Pages demo — vanilla-JS Markov chain in the browser
 └── corpus/      Helper script for fetching public-domain sample texts
 ```
 
@@ -266,6 +271,55 @@ language choice itself does.
 - **Hand-rolled C with the right data structure beats Rust and Go by
   about 35%.** A small FNV-1a + linear-probing hash table is enough to
   unseat the modern systems languages on a workload this simple.
+
+## Travesty 2 — extended Python variant
+
+`python/travesty2.py` is a second Python program that goes beyond the
+original Markov idea and pulls in three concepts that bring the algorithm
+visibly closer to how modern LLMs work.
+
+### Temperature sampling
+
+The same parameter you'll find on every LLM playground. `T = 1.0` samples
+followers proportionally to their corpus frequency. Values below 1 sharpen
+the distribution toward the most frequent follower (more conservative,
+more on-distribution); values above 1 flatten it (more variety, more
+chaos). `T = 0` always picks the most frequent follower — fully
+deterministic, often loops.
+
+```bash
+python3 python/travesty2.py -n 5 -c 200 -t 0.3 --seed 42 corpus/faust.txt
+python3 python/travesty2.py -n 5 -c 200 -t 2.0 --seed 42 corpus/faust.txt
+```
+
+### Word n-grams
+
+`--mode word` builds the table over word tokens instead of characters.
+The output sounds remarkably more grammatical because the syntactic glue
+of the language survives. This is conceptually one step closer to LLMs,
+which sample over sub-word *tokens*.
+
+```bash
+python3 python/travesty2.py -n 3 -c 100 -m word corpus/faust.txt
+```
+
+### Table visualisation
+
+`--visualize` prints a summary of the n-gram table itself: how many
+prefixes there are, how many transitions, and a bar chart of the most
+common prefixes with their followers. A small window into the statistics
+the generator is sampling from.
+
+```bash
+python3 python/travesty2.py -n 4 -v corpus/faust.txt
+```
+
+### Web demo
+
+The exact same algorithm, in vanilla JavaScript, runs at
+[docatprompt.github.io/monkey-typewriter](https://docatprompt.github.io/monkey-typewriter/).
+Paste any text, choose mode, slide *n* and temperature, see the table and
+the generated output instantly. No Python install needed.
 
 ## References
 
